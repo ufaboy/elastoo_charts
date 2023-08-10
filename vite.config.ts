@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import path from 'path'
 
 export default defineConfig({
-  base: 'elastoo_charts',
+  base: '/elastoo_charts/',
   plugins: [vue()],
   resolve: {
     alias: {
