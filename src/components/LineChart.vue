@@ -20,15 +20,26 @@ import { LineChartResponse, LineChartLabels } from '@/interfaces/Chart';
 ChartJS.register(CategoryScale, Colors, LinearScale, LineElement, Title, Tooltip, Legend, PointElement)
 
 const lineChartStore = useLineChartStore()
-const { lineData, chartOptions } = storeToRefs(lineChartStore)
+const { rawLineData, lineData, chartOptions } = storeToRefs(lineChartStore)
 
 const labelsType = ref(LineChartLabels.date)
+const startDate = ref<Date>()
+const endDate = ref<Date>()
 
-function changeAggregation() {
+function getChartData() {
+    const filteredData = rawLineData.value.filter(item => {
+        let date = new Date(item.Дата);
+        // Если startDate не определено, то считаем, что дата date проходит проверку
+        let startCondition = startDate.value ? date >= new Date(startDate.value) : true;
+        // Если endDate не определено, то считаем, что дата date проходит проверку
+        let endCondition = endDate.value ? date <= new Date(endDate.value) : true;
+        return startCondition && endCondition;
+    });
+
     if (labelsType.value === LineChartLabels.month) {
-        lineChartStore.setAggregationByMonths()
+        lineChartStore.setAggregationByMonths(filteredData)
     } else if (labelsType.value === LineChartLabels.date) {
-        lineChartStore.setAggregationByDate()
+        lineChartStore.setAggregationByDate(filteredData)
     }
 }
 async function getData() {
@@ -37,22 +48,43 @@ async function getData() {
         lineChartStore.setRawData(result as LineChartResponse[])
     }
 }
+
 getData()
 </script>
 
 <template>
-    <div>
-        <select class="select" v-model="labelsType" @change="changeAggregation">
-            <option :value="type" v-for="type in LineChartLabels">
-                {{ type }}
-            </option>
-        </select>
-        <Line :data="lineData" :options="chartOptions" />
+    <div class="chart-header">
+        <label class="label">
+            <span>Aggregation by</span>
+            <select class="select" v-model="labelsType" @change="getChartData">
+                <option :value="type" v-for="(type, index) in LineChartLabels" :key="index">
+                    {{ type }}
+                </option>
+            </select>
+        </label>
+        <label class="label">
+            <span>After</span>
+            <input type="date" v-model="startDate" @change="getChartData">
+        </label>
+        <label class="label">
+            <span>Before</span>
+            <input type="date" v-model="endDate" @change="getChartData">
+        </label>
     </div>
+    <Line :data="lineData" :options="chartOptions" />
 </template>
 
 <style>
-.select {
-margin: 1rem 0;
+.chart-header {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.label {
+    margin-right: 1rem;
+    display: flex;
+    flex-flow: column;
 }
 </style>

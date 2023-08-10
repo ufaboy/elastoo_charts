@@ -25,6 +25,7 @@ export const useLineChartStore = defineStore('line', () => {
   });
   const labels = ref<string[]>([]);
   const datasets = ref<number[]>([]);
+
   const lineData = computed(() => {
     return {
       labels: labels.value,
@@ -35,11 +36,11 @@ export const useLineChartStore = defineStore('line', () => {
   function setRawData(data: LineChartResponse[]) {
     rawLineData.value = data;
     datasets.value = data.map((item) => item.Процент);
-    setAggregationByDate();
+    setAggregationByDate(data);
   }
 
-  function setAggregationByDate() {
-    labels.value = rawLineData.value.map((item) => {
+  function setAggregationByDate(data: LineChartResponse[]) {
+    labels.value = data.map((item) => {
       const date = new Date(item[LineChartLabels.date]);
       return new Intl.DateTimeFormat(navigator.language, {
         year: 'numeric',
@@ -50,10 +51,10 @@ export const useLineChartStore = defineStore('line', () => {
     datasets.value = rawLineData.value.map((item) => item.Процент);
   }
 
-  function setAggregationByMonths() {
+  function setAggregationByMonths(data: LineChartResponse[]) {
     let aggregation: { [month: string]: number } = {};
 
-    for (const item of rawLineData.value) {
+    for (const item of data) {
       if (!aggregation[item.Месяц]) {
         aggregation[item.Месяц] = 0;
       }
@@ -61,6 +62,12 @@ export const useLineChartStore = defineStore('line', () => {
     }
     labels.value = Object.keys(aggregation);
     datasets.value = Object.values(aggregation);
+  }
+
+  function filterRawByDate(startDate: Date, endDate: Date) {
+    return rawLineData.value.filter(item => {
+      new Date(item.Дата) >= startDate && new Date(item.Дата) <= endDate
+    })
   }
 
   return {
@@ -72,5 +79,6 @@ export const useLineChartStore = defineStore('line', () => {
     setRawData,
     setAggregationByDate,
     setAggregationByMonths,
+    filterRawByDate
   };
 });
